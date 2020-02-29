@@ -1,0 +1,3 @@
+# omnicorp
+
+`docker-compose up`
