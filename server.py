@@ -63,7 +63,7 @@ async def get_redis():
 
 def get_prefix(curie):
     """Get prefix from CURIE."""
-    match = re.fullmatch('([A-Z.]+):[A-Z0-9]+', curie)
+    match = re.fullmatch('([a-zA-Z.]+):[A-Z0-9]+', curie)
     if match is None:
         raise ValueError(f'{curie} is not a valid CURIE')
     return match[1]
