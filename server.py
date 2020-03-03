@@ -101,8 +101,11 @@ async def get_shared_pmids(
         statement += f"JOIN omnicorp.{prefix} {uid} ON n00.pubmedid = {uid}.pubmedid\n"
     conditions = '\nAND '.join([f'n{idx:02d}.curie = ${idx + 1}' for idx in range(len(prefixes))])
     statement += f"WHERE {conditions}"
-    values = await postgres_conn.fetch(statement, *curies)
-    num = len(values)
+    try:
+        values = await postgres_conn.fetch(statement, *curies)
+        num = len(values)
+    except asyncpg.exceptions.UndefinedTableError:
+        num = 0
     if len(curies) == 1:
         key = f'OmnicorpSupport({curies[0]})'
         LOGGER.debug('Setting %s to %s.', key,
