@@ -105,6 +105,10 @@ async def get_shared_pmids(
         values = await postgres_conn.fetch(statement, *curies)
         num = len(values)
     except asyncpg.exceptions.UndefinedTableError:
+        # e.g. omnicorp.ncbigene
+        num = 0
+    except asyncpg.exceptions.FeatureNotSupportedError:
+        # e.g. cross-database references are not implemented: "omnicorp.chembl.compound"
         num = 0
     if len(curies) == 1:
         key = f'OmnicorpSupport({curies[0]})'
