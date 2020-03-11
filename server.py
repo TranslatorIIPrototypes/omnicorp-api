@@ -88,26 +88,28 @@ def get_prefix(curie):
 @app.get('/shared', response_model=int)
 async def get_shared_pmids(
         curies: List[str] = Query(..., alias='curie'),
+        bypass_cache: bool = False,
         postgres_conn=Depends(get_postgres),
         redis_conn=Depends(get_redis),
 ) -> int:
     """Get PMIDs shared by ids."""
     assert len(curies) < 10
     curies.sort()
-    if len(curies) == 1:
-        key = f'OmnicorpSupport({curies[0]})'
-        value = await redis_conn.get(key)
-        if value is not None:
-            value = pickle.loads(value)
-            LOGGER.debug('Got %s from cache.', key)
-            return value['omnicorp_article_count']
-    if len(curies) == 2:
-        key = f'OmnicorpSupport_count({curies[0]},{curies[1]})'
-        value = await redis_conn.get(key)
-        if value is not None:
-            value = pickle.loads(value)
-            LOGGER.debug('Got %s from cache.', key)
-            return value
+    if not bypass_cache:
+        if len(curies) == 1:
+            key = f'OmnicorpSupport({curies[0]})'
+            value = await redis_conn.get(key)
+            if value is not None:
+                value = pickle.loads(value)
+                LOGGER.debug('Got %s from cache.', key)
+                return value['omnicorp_article_count']
+        if len(curies) == 2:
+            key = f'OmnicorpSupport_count({curies[0]},{curies[1]})'
+            value = await redis_conn.get(key)
+            if value is not None:
+                value = pickle.loads(value)
+                LOGGER.debug('Got %s from cache.', key)
+                return value
     LOGGER.debug('Getting support for %s from PostgreSQL.', curies)
     prefixes = [get_prefix(curie) for curie in curies]
     statement = f"SELECT n00.pubmedid\n" + \
