@@ -37,28 +37,44 @@ app.add_middleware(
 
 LOGGER.setLevel(logging.DEBUG)
 
+db = {
+    'postgres': None,
+    'redis': None,
+}
+
 
 async def get_postgres():
     """Get Postgres connection."""
-    conn = await asyncpg.connect(
+    async with db['postgres'].acquire() as conn:
+        yield conn
+
+
+async def get_redis():
+    """Get Redis connection."""
+    yield db['redis']
+
+
+@app.on_event("startup")
+async def startup():
+    """Open database connections."""
+    db['postgres'] = await asyncpg.create_pool(
         user=POSTGRES_USER,
         password=POSTGRES_PASSWORD,
         database=POSTGRES_DB,
         host=POSTGRES_HOST,
         port=POSTGRES_PORT
     )
-    yield conn
-    await conn.close()
-
-
-async def get_redis():
-    """Get Redis connection."""
-    redis = await aioredis.create_redis_pool(
+    db['redis'] = await aioredis.create_redis_pool(
         f'redis://{REDIS_HOST}:{REDIS_PORT}',
         password=REDIS_PASSWORD,
     )
-    yield redis
-    redis.close()
+
+
+@app.on_event("shutdown")
+async def shutdown():
+    """Shut down database connections."""
+    await db['postgres'].close()
+    db['redis'].close()
 
 
 def get_prefix(curie):
