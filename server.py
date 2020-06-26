@@ -79,7 +79,7 @@ async def shutdown():
 
 def get_prefix(curie):
     """Get prefix from CURIE."""
-    match = re.fullmatch('([a-zA-Z.]+):[A-Z0-9]+', curie)
+    match = re.fullmatch(r'([a-zA-Z.]+):\w+', curie)
     if match is None:
         raise ValueError(f'{curie} is not a valid CURIE')
     return match[1]
